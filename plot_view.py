@@ -4,8 +4,6 @@ import json
 import streamlit as st
 import matplotlib.pyplot as plt
 
-
-
 st.set_page_config(layout="wide")
 
 plt.style.use('seaborn-white')
@@ -80,7 +78,8 @@ def plot_line(df, metric, reward_dist, K, T_limit, policies, s2, prior_type, col
     ax.set_xticks(pivot.index, fontsize = 20)
     st.pyplot(fig)
 
-def plot_bar_s2(df, metric, K, T, policies, prior_type, color_dict = color_dict):
+@st.cache
+def filter_bar_s2(df, metric, K, T, policies, prior_type):
 
     K_cond = df['K'] == K
     T_cond = df['T'] == T
@@ -101,22 +100,11 @@ def plot_bar_s2(df, metric, K, T, policies, prior_type, color_dict = color_dict)
     else:
         plot_metric = "avg_correct"
 
-    fig, ax = plt.subplots()
     pivot = plot_df.pivot('s2', 'policy', plot_metric)
+    return pivot
 
-    ordered_pols = [key for key in color_dict.keys() if key in pivot.columns]
-    pivot = pivot[ordered_pols]
-
-    pivot.plot.bar(color = [color_dict.get(x) for x in pivot.columns], linewidth = 4, figsize = (12,8), ax=ax)
-    ax.legend(bbox_to_anchor=(1.01, 1), loc="upper left", fontsize=20)
-    #ax.legend(fontsize=16)
-    ax.tick_params(axis='both', which='major', labelsize=20)
-    ax.set_ylabel(metric, fontsize=20)
-    ax.set_xlabel("Measurement Variance", fontsize=20)
-    #ax.set_xticks(pivot.index, fontsize = 18)
-    st.pyplot(fig)
-
-def plot_bar_prior(df, metric, reward_dist, K, T, policies, s2, color_dict = color_dict):
+@st.cache
+def filter_bar_prior(df, metric, reward_dist, K, T, policies, s2, color_dict = color_dict):
 
     K_cond = df['K'] == K
     T_cond = df['T'] == T
@@ -143,6 +131,10 @@ def plot_bar_prior(df, metric, reward_dist, K, T, policies, s2, color_dict = col
     pivot = plot_df.pivot('prior_type', 'policy', plot_metric)
     pivot = pivot.reindex(["Flat", "Top One", "Top Half", "Descending"])
 
+    return pivot
+
+def plot_bar(pivot, metric, bar_x, color_dict = color_dict):
+    fig, ax = plt.subplots()
     ordered_pols = [key for key in color_dict.keys() if key in pivot.columns]
     pivot = pivot[ordered_pols]
 
@@ -151,9 +143,11 @@ def plot_bar_prior(df, metric, reward_dist, K, T, policies, s2, color_dict = col
     #ax.legend(fontsize=16)
     ax.tick_params(axis='both', which='major', labelsize=20)
     ax.set_ylabel(metric, fontsize=20)
-    ax.set_xlabel("Prior Distribution", fontsize=20)
+    ax.set_xlabel(bar_x, fontsize=20)
     #ax.set_xticks(pivot.index, fontsize = 18)
     st.pyplot(fig)
+
+
 
 # Top line
 row1_1, space, row1_2 = st.columns((3, 0.2, 1.75))
@@ -271,12 +265,12 @@ with row3_2:
 
 with row3_1:
     st.text("")
-    plot_bar_s2(regret_df, 
-                bar_metric_selected, 
-                bar_K_selected, 
-                bar_T_selected[1], 
-                bar_policies_selected,
-                bar_prior_type_selected)
+    plot_bar(filter_bar_s2(regret_df, 
+                            bar_metric_selected, 
+                            bar_K_selected, 
+                            bar_T_selected[1], 
+                            bar_policies_selected,
+                            bar_prior_type_selected), bar_metric_selected, "Measurement Variance")
 
     st.write("""
 
@@ -315,13 +309,13 @@ with row4_2:
 
 with row4_1:
     st.text("")
-    plot_bar_prior(regret_df,
+    plot_bar(filter_bar_prior(regret_df,
                 prior_metric_selected, 
                 prior_dist_selected,
                 prior_K_selected, 
                 prior_T_selected[1], 
                 prior_policies_selected,
-                prior_s2_selected)
+                prior_s2_selected), prior_metric_selected, "Prior Distribution")
 
 row5_1, space, row5_2 = st.columns((3, 0.2, 1.75))
 
