@@ -175,7 +175,7 @@ row1_sep_1, space, row1_sep_2 = st.columns((3, 0.2, 1.75))
 
 with row1_sep_1:
     st.write("""
-    ### Simple Regret across Reallocations
+    ## Simple Regret across Reallocations
     """
     )
 
@@ -245,7 +245,7 @@ row2_sep_1, space, row2_sep_2 = st.columns((3, 0.2, 1.75))
 
 with row2_sep_1:
     st.write("""
-    ### Simple Regret across Measurement Variances
+    ## Simple Regret across Measurement Variances
     """
     )
 
@@ -290,7 +290,7 @@ row3_sep_1, space, row3_sep_2 = st.columns((3, 0.2, 1.75))
 
 with row3_sep_1:
     st.write("""
-    ### Simple Regret across Priors
+    ## Simple Regret across Priors
     """
     )
 
@@ -323,20 +323,22 @@ with row4_1:
                 prior_policies_selected,
                 prior_s2_selected)
 
-# with row3_1:
+row5_1, space, row5_2 = st.columns((3, 0.2, 1.75))
 
-#     st.write(
-#         """
-#     We consider the following policies:
-#         - Uniform: uniformly samples all arms in every batch
-#         - Epsilon Greedy ($\epsilon = 0.2$): allocates $90\%$ of samples to the arm with the highest posterior mean.
-#         - Successive Elimination: in every round 
-#         - Batch-Limit TS / Top-Two-TS:
-#         - Bern TS / Top-Two-TS:
-#         - KG:
-#         - PG-5 (ours):
-#         - Q-myopic (ours):
+with row5_1:
+
+    st.write(
+        """
+        ## Policies
+        - **Uniform:** uniformly samples all arms in every batch.  
+        - **Successive Elimination:** in every time period, arm is eliminated if its upper confidence bound is below the lower confidence bound of another arm.  
+        - **Batch-Limit TS$^{*}$ / Top-Two-TS$^{*}$:** allocates samples according to Thompson Sampling / Top-Two Thompson Sampling probabilities under Gaussian batch approximations.  
+        - **Bern TS / Top-Two-TS$:** allocates samples according to Thompson Sampling / Top-Two Thompson Sampling probabilities for Bernoulli rewards. Only available for Bernoulli specification.  
+        - **KG$^{*}$:** allocates samples to maximize the one-step lookahead Q-function. A randomized version of Knowledge Gradient.  
+        - **PG-5$^{*}$ (ours)**: allocates samples according to policy trained by policy gradient with an episode length of 5 batches.  
+        - **Q-myopic$^{*}$ (ours)**: allocates samples to maximize the Q-myopic planning problem.  
         
-#         """
-#     )
+        $^{*}$ denotes policies that use Gaussian batch approximations as well as Gaussian approximations of the prior distribution.
+        """
+    )
         
