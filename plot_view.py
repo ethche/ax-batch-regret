@@ -163,11 +163,10 @@ def plot_bar(pivot, metric, bar_x, color_dict = color_dict):
 
 
 # Top line
-row1_1, space, row1_2 = st.columns((3.5, 0.2, 1.5))
+title_container = st.container()
 
-with row1_1:
-    st.title("""
-    Adaptive Experimentation at Scale:                                 Bayesian Batch Policies""")
+with title_container:
+    st.title("Adaptive Experimentation at Scale: Bayesian Batch Policies")
 
 # with row1_2:
 #     st.write(
@@ -186,7 +185,8 @@ with row1_sep_1:
     ## Introduction
 
     We run simulations to benchmark the performance of adaptive experimentation policies in batched settings. \\
-    More specifically, we consider a Bayesian experimenter who runs a multi-round adaptive experiment. In each round, the experimenter assigns a batch of samples
+    More specifically, we consider a Bayesian experimenter who runs a multi-round adaptive experiment. \\
+    In each round, the experimenter assigns a batch of samples
     across different treatment arms to observe the treatment effects. \\
     We fix the batch size to be $100$ samples.
     
