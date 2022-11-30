@@ -22,15 +22,17 @@ def filter_data_line(df, reward_dist, K, T_limit):
     return df[K_cond & dist_cond & T_cond]
 
 #'Epsilon Greedy':'#377eb8',
-color_dict = {'Uniform': '#377eb8',
-            'Successive Elimination': '#4daf4a',
-            'Bern-TTTS': 'brown',
-            'Bern-TS': 'brown',
-            'Batch-Limit-TTTS': 'blue',
-            'Batch-Limit-TS':'blue',
-            'KG': 'red',
-            'PG-5 (ours)': '#ff7f00', 
-            'Q-myopic (ours)': '#984ea3'
+# Things within our framework, things outside our framework...
+# E.g. Dashed lines...
+color_dict = {'Uniform': {"color":'#377eb8', 'ls':"--", 'hatch': '/'},
+            'Batch Successive Elimination': {"color": '#984ea3', 'ls':"--", 'hatch': '/'},
+            'Batch Oracle Top-Two TS': {"color": '#e41a1c', 'ls':"--", 'hatch': '/'},
+            'Batch Oracle TS': {"color": '#f781bf', 'ls': "--", 'hatch': '/'},
+            'Gaussian Limit Top-Two TS': {"color": 'blue', 'ls': "-", 'hatch': ''},
+            'Gaussian Limit TS': {"color": '#87CEEB', 'ls': "-", 'hatch': ''},
+            'Myopic': {"color": 'red', 'ls': "-", 'hatch': ''},
+            'Policy Gradient':  {"color": '#ff7f00','ls': "-", 'hatch': ''},
+            'RHO (proposed)': {"color": '#4daf4a', 'ls': "-", 'hatch': ''}
             }
 
 #ordered_pols = ['Uniform', ]
@@ -69,8 +71,11 @@ def plot_line(df, metric, reward_dist, K, T_limit, policies, s2, prior_type, col
     ordered_pols = [key for key in color_dict.keys() if key in pivot.columns]
     pivot = pivot[ordered_pols]
 
-    pivot.plot(color = [color_dict.get(x) for x in pivot.columns], linewidth = 5, figsize = (12,8), ax=ax)
+    pivot.plot(color = [color_dict.get(x)['color'] for x in pivot.columns], 
+                style = [color_dict.get(x)['ls'] for x in pivot.columns], 
+                linewidth = 6, figsize = (12,9), ax=ax)
     ax.legend(bbox_to_anchor=(1.01, 1), loc="upper left", fontsize=20)
+    #ax.legend(bbox_to_anchor=(0.5, -0.1), loc="upper right", fontsize=20)
     #ax.legend(fontsize=16)
     ax.tick_params(axis='both', which='major', labelsize=20)
     ax.set_ylabel(metric, fontsize=20)
@@ -138,22 +143,30 @@ def plot_bar(pivot, metric, bar_x, color_dict = color_dict):
     ordered_pols = [key for key in color_dict.keys() if key in pivot.columns]
     pivot = pivot[ordered_pols]
 
-    pivot.plot.bar(color = [color_dict.get(x) for x in pivot.columns], linewidth = 4, figsize = (12,8), ax=ax)
+    pivot.plot.bar(color = [color_dict.get(x)['color'] for x in pivot.columns], linewidth = 4, figsize = (12,8), ax=ax)
+    bars = ax.patches
+    hatch_styles = ''.join([color_dict[x]['hatch'] for x in pivot.columns])
+    hatches = ''.join(h*len(pivot) for h in hatch_styles)
+
+    for bar, hatch in zip(bars, hatches):
+        bar.set_hatch(hatch)
+    
     ax.legend(bbox_to_anchor=(1.01, 1), loc="upper left", fontsize=20)
     #ax.legend(fontsize=16)
     ax.tick_params(axis='both', which='major', labelsize=20)
     ax.set_ylabel(metric, fontsize=20)
     ax.set_xlabel(bar_x, fontsize=20)
+    ax.set_ylim((20,105))
     #ax.set_xticks(pivot.index, fontsize = 18)
     st.pyplot(fig)
 
 
 
 # Top line
-row1_1, space, row1_2 = st.columns((3, 0.2, 1.75))
+row1_1, space, row1_2 = st.columns((3.5, 0.2, 1.5))
 
 with row1_1:
-    st.title("Regret of Batch Experimentation Policies")
+    st.title("Adaptive Experimentation at Scale: Bayesian Batch Policies")
 
 # with row1_2:
 #     st.write(
@@ -165,17 +178,104 @@ with row1_1:
 #     """
 #     )
 
-row1_sep_1, space, row1_sep_2 = st.columns((3, 0.2, 1.75))
+row1_sep_1, row1_sep_2 = st.columns((5,1))
 
 with row1_sep_1:
     st.write("""
-    ## Simple Regret across Reallocations
+    ## Introduction
+
+    We run simulations to benchmark the performance of adaptive experimentation policies in batched settings. \\
+    More specifically, we consider a Bayesian experimenter who runs a multi-round adaptive experiment. \\
+    In each round, the experimenter assigns a batch of samples
+    across different treatment arms to observe the treatment effects. \\
+    We fix the batch size to be $100$ samples.
+    
+    At the end of the experiment, the experimenter selects a single treatment arm.  
+    The goal is to select the arm with the highest average treatment effect (Bayesian best arm identification).  
+    The evaluation metric we use is **Bayes Simple Regret**: the optimality gap between the selected arm and the best arm,
+    averaged across instances drawn from the experimenter's prior.
+
+    We propose Bayesian policies that use Gaussian approximations of the aggregated rewards in each batch
+    in order to update beliefs about average treatment effects. To test the performance of these methods,
+    we consider two settings:
+    1. **Gumbel/Gamma**: treatment effect for each arm $a$ is $Gumbel(\mu_{a}, \\beta)$ r.v.s. The experimenter has an independent Gamma(100, 1/100) prior over each $\mu_{a}$. 
+            The $\\beta$ parameter is known and determines the measurement variance $s_{a}^{2}$. We consider measurement variances in $(0.2, 1, 5)$.
+    2. **Bernoulli/Beta**: treatment effects for each arm $a$  are $Bernoulli(\\theta_{a})$ r.v.s. The experimenter has an independent Beta(100,100) prior over each $\\theta_{a}$. The measurement variance is fixed by $\\theta$, so this cannot be altered.
+
+    Our approximate Bayesian policies also use Gaussian approximations for the prior distribution in order to preserve conjugacy.  
+    We consider different prior distributions. Below displays the mean and standard deviations under each prior distribution type (for $K = 6$ treatment arms).
     """
     )
 
-row2_1, space, row2_2 = st.columns((3, 0.2, 1.75))
+prior_img_1, prior_img_2,space = st.columns((2.5, 2.5, 1))
 
-with row2_2:
+with prior_img_1:
+    st.image("./prior_fig_1.png")
+    st.text("")
+
+with prior_img_2:
+    st.image("./prior_fig_2.jpg")
+    st.text("")
+
+row1_sep_1, row1_sep_2 = st.columns((5,1))
+
+with row1_sep_1:
+    st.write("""
+    We consider the following policies. $^{*}$ denotes policies that use Gaussian batch approximations.
+    - **Uniform:** uniformly samples all arms in every batch.  
+    - **Batch Successive Elimination:** in every time period, arm is eliminated if its upper confidence bound is below the lower confidence bound of another arm. If an arm $a$ is sampled $n_{a}$ times, then its confidence bound is as follows (with $c,\delta$ chosen by grid search for each instance): $C_{a} = c \cdot s_{a}\sqrt{\\frac{\log(Kn_{a}^{2}/\delta))}{n_{a}}}$.
+    - **Batch Oracle TS**: Beta/Bernoulli Thompson Sampling policy with batch updates. Only available for the Beta/Bernoulli setting.  
+    - **Batch Oracle Top-Two TS**: Beta/Bernoulli Top-Two Thompson Sampling policy with batch updates. Only available for the Beta/Bernoulli setting.  
+    - **Gaussian Limit TS$^{*}$**: Thompson Sampling policy with Gaussian batch approximations.  
+    - **Gaussian Limit Top-Two TS$^{*}$**: Top-Two Thompson Sampling policy with Gaussian batch approximations.  
+    - **Myopic$^{*}$:** selects the sampling allocation that maximizes the one-step lookahead Q-function. A randomized version of Knowledge Gradient.  
+    - **Policy Gradient$^{*}$**: allocates samples according to a policy parameterized by a feed-forward NN, which is trained through policy gradient with an episode length of 5 batches.    
+    - **RHO$^{*}$ (proposed)**: selects the sampling allocation by solving the RHO planning problem.  
+    
+    """
+    )
+    st.text("")
+    st.text("")
+
+row1_header_1, space, row1_header_2 = st.columns((3, 0.2, 1.5))
+
+with row1_header_1:
+    st.write("""
+    ## Simple Regret across Reallocation Epochs
+    """
+    )
+
+# line_plt, space = st.columns((5, 0.2))
+# row2_1, space, row2_2, space= st.columns((3,0.2,3,0.2))
+
+# with row2_1:
+#     st.text("")
+#     st.text("")
+#     dist_selected = st.selectbox("Reward Distribution", options = ('Gumbel', 'Bernoulli'), key = 'dist_select')
+#     metric_selected = st.selectbox("Metric", options = ('Percent of Simple Regret of Uniform', 'Simple Regret', 'Percent Correct'), 
+#                                     key = 'metric_select')
+#     K_selected = st.selectbox("Number of Treatment Arms", options = (10, 100), key = 'K_select')
+#     s2_selected = st.selectbox("Measurement variance", options = (1, 0.2, 5), key = 's2_select')
+
+# with row2_2:
+#     st.text("")
+#     st.text("")
+    
+#     policies_selected = st.multiselect("Policies", options = [key for key in  color_dict.keys()], key = 'policies_select', 
+#                                         default = ['Uniform', 
+#                                                    'Batch Successive Elimination', 
+#                                                    'Gaussian Limit TS', 
+#                                                    'Batch Oracle TS',
+#                                                    'Myopic',
+#                                                    'Policy Gradient',
+#                                                    'RHO (proposed)'])
+#     prior_type_selected = st.selectbox("Prior Distribution", options = ('Flat', 'Top One', 'Top Half', 'Descending'), 
+#                                         key = 'prior_select')
+#     T_selected = st.select_slider("Max Horizon", options = [i for i in range(1,11)], value = (1,10), key = 'T_select')
+
+line_plt, space, line_plt_toggle = st.columns((3, 0.2, 1.5))
+
+with line_plt_toggle:
     st.text("")
     st.text("")
     dist_selected = st.selectbox("Reward Distribution", options = ('Gumbel', 'Bernoulli'), key = 'dist_select')
@@ -183,21 +283,20 @@ with row2_2:
                                     key = 'metric_select')
     K_selected = st.selectbox("Number of Treatment Arms", options = (10, 100), key = 'K_select')
     s2_selected = st.selectbox("Measurement variance", options = (1, 0.2, 5), key = 's2_select')
+
     policies_selected = st.multiselect("Policies", options = [key for key in  color_dict.keys()], key = 'policies_select', 
                                         default = ['Uniform', 
-                                                   'Successive Elimination', 
-                                                   'Batch-Limit-TS', 
-                                                   'Bern-TS',
-                                                   'KG',
-                                                   'PG-5 (ours)',
-                                                   'Q-myopic (ours)'])
+                                                   'Batch Successive Elimination', 
+                                                   'Gaussian Limit TS', 
+                                                   'Batch Oracle TS',
+                                                   'Myopic',
+                                                   'Policy Gradient',
+                                                   'RHO (proposed)'])
     prior_type_selected = st.selectbox("Prior Distribution", options = ('Flat', 'Top One', 'Top Half', 'Descending'), 
                                         key = 'prior_select')
     T_selected = st.select_slider("Max Horizon", options = [i for i in range(1,11)], value = (1,10), key = 'T_select')
 
-
-
-with row2_1:
+with line_plt:
     st.text("")
     st.text("")
     plot_line(regret_df, 
@@ -210,32 +309,9 @@ with row2_1:
               prior_type_selected)
 
 
-    st.write("""
 
-    ##### **Notes:**  
-    - Each batch has $n = 100$ samples, which are allocated across the treatment arms in every time period.
-    - The experimenter has a prior over the means of the arm rewards. 
-    - We consider two types of reward distributions:
-        1. **Gumbel**: rewards follow independent $Gumbel(\mu , \\beta)$ distributions with a $Gamma(100, 1/100)$ prior over $\mu$. The $\\beta$ parameter is known and determines the measurement variance. We consider measurement variances $\in [1/5, 1, 5]$.
-        2. **Bernoulli**: rewards follow independent $Bernoulli(\\theta)$ distributions with a $Beta(100,100)$ prior over $\\theta$. The measurement variance is fixed by $\\theta$, so this cannot be altered.
-    - For policies that use the Gaussian batch approximations, the true prior is also approximated by a Gaussian distribution with the same mean and variance to preserve conjugacy.
-    - We consider different prior distributions. Below displays the mean and standard deviations under each prior distribution type.
-    """)
-    
 
-    
-
-prior_img_1, prior_img_2 = st.columns((3, 3))
-
-with prior_img_1:
-    st.image("./prior_fig_1.jpg")
-    st.text("")
-
-with prior_img_2:
-    st.image("./prior_fig_2.jpg")
-    st.text("")
-
-row2_sep_1, space, row2_sep_2 = st.columns((3, 0.2, 1.75))
+row2_sep_1, space, row2_sep_2 = st.columns((3, 0.2, 1.5))
 
 with row2_sep_1:
     st.write("""
@@ -243,7 +319,7 @@ with row2_sep_1:
     """
     )
 
-row3_1, space, row3_2 = st.columns((3, 0.2, 1.75))
+row3_1, space, row3_2 = st.columns((3, 0.2, 1.5))
 
 with row3_2:
     st.text("")
@@ -252,12 +328,12 @@ with row3_2:
     bar_K_selected = st.selectbox("Number of Treatment Arms", options = (10, 100), key = 'bar_K_select')
     bar_policies_selected = st.multiselect("Policies", options = [key for key in  color_dict.keys()], key = 'bar_policies_select', 
                                         default = ['Uniform', 
-                                                   'Successive Elimination', 
-                                                   'Batch-Limit-TS', 
-                                                   'Bern-TS',
-                                                   'KG',
-                                                   'PG-5 (ours)',
-                                                   'Q-myopic (ours)'])
+                                                   'Batch Successive Elimination', 
+                                                   'Gaussian Limit TS', 
+                                                   'Batch Oracle TS',
+                                                   'Myopic',
+                                                   'Policy Gradient',
+                                                   'RHO (proposed)'])
     bar_prior_type_selected = st.selectbox("Prior Distribution", options = ('Flat', 'Top One', 'Top Half', 'Descending'), 
                                         key = 'bar_prior_select')
     bar_T_selected = st.select_slider("T", options = [i for i in range(1,11)], value = (1,10), key = 'bar_T_select')
@@ -272,15 +348,10 @@ with row3_1:
                             bar_policies_selected,
                             bar_prior_type_selected), bar_metric_selected, "Measurement Variance")
 
-    st.write("""
-
-    ##### **Notes:**  
-    - We only display the results for the Gumbel specification, since for Bernoulli rewards, the reward means and measurement noise are fixed by the same parameter.
-        """)
 
     st.text("")
 
-row3_sep_1, space, row3_sep_2 = st.columns((3, 0.2, 1.75))
+row3_sep_1, space, row3_sep_2 = st.columns((3, 0.2, 1.5))
 
 with row3_sep_1:
     st.write("""
@@ -288,7 +359,7 @@ with row3_sep_1:
     """
     )
 
-row4_1, space, row4_2 = st.columns((3, 0.2, 1.75))
+row4_1, space, row4_2 = st.columns((3, 0.2, 1.5))
 
 with row4_2:
     st.text("")
@@ -299,12 +370,12 @@ with row4_2:
     prior_s2_selected = st.selectbox("Measurement variance", options = (1, 0.2, 5), key = 'prior_s2_select')
     prior_policies_selected = st.multiselect("Policies", options = [key for key in  color_dict.keys()], key = 'prior_policies_select', 
                                         default = ['Uniform', 
-                                                   'Successive Elimination', 
-                                                   'Batch-Limit-TS', 
-                                                   'Bern-TS',
-                                                   'KG',
-                                                   'PG-5 (ours)',
-                                                   'Q-myopic (ours)'])
+                                                   'Batch Successive Elimination', 
+                                                   'Gaussian Limit TS', 
+                                                   'Batch Oracle TS',
+                                                   'Myopic',
+                                                   'Policy Gradient',
+                                                   'RHO (proposed)'])
     prior_T_selected = st.select_slider("T", options = [i for i in range(1,11)], value = (1,10), key = 'prior_T_select')
 
 with row4_1:
@@ -316,23 +387,3 @@ with row4_1:
                 prior_T_selected[1], 
                 prior_policies_selected,
                 prior_s2_selected), prior_metric_selected, "Prior Distribution")
-
-row5_1, space, row5_2 = st.columns((3, 0.2, 1.75))
-
-with row5_1:
-
-    st.write(
-        """
-        ## Policies
-        - **Uniform:** uniformly samples all arms in every batch.  
-        - **Successive Elimination:** in every time period, arm is eliminated if its upper confidence bound is below the lower confidence bound of another arm.  
-        - **Batch-Limit TS$^{*}$ / Top-Two-TS$^{*}$:** allocates samples according to Thompson Sampling / Top-Two Thompson Sampling probabilities under Gaussian batch approximations.  
-        - **Bern TS / Top-Two-TS:** allocates samples according to Thompson Sampling / Top-Two Thompson Sampling probabilities for Bernoulli rewards. Only available for Bernoulli specification.  
-        - **KG$^{*}$:** allocates samples to maximize the one-step lookahead Q-function. A randomized version of Knowledge Gradient.  
-        - **PG-5$^{*}$ (ours)**: allocates samples according to policy trained by policy gradient with an episode length of 5 batches.  
-        - **Q-myopic$^{*}$ (ours)**: allocates samples to maximize the Q-myopic planning problem.  
-        
-        $^{*}$ denotes policies that use Gaussian batch approximations as well as Gaussian approximations of the prior distribution.
-        """
-    )
-        
