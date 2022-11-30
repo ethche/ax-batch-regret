@@ -26,11 +26,11 @@ def filter_data_line(df, reward_dist, K, T_limit):
 # E.g. Dashed lines...
 color_dict = {'Uniform': {"color":'#377eb8', 'ls':"--", 'hatch': '/'},
             'Batch Successive Elimination': {"color": '#984ea3', 'ls':"--", 'hatch': '/'},
-            'Batch Oracle Top-Two TS': {"color": '#e41a1c', 'ls':"--", 'hatch': '/'},
+            'Batch Oracle Top-Two TS': {"color": 'chocolate', 'ls':"--", 'hatch': '/'},
             'Batch Oracle TS': {"color": '#f781bf', 'ls': "--", 'hatch': '/'},
             'Gaussian Limit Top-Two TS': {"color": 'blue', 'ls': "-", 'hatch': ''},
             'Gaussian Limit TS': {"color": '#87CEEB', 'ls': "-", 'hatch': ''},
-            'Myopic': {"color": 'red', 'ls': "-", 'hatch': ''},
+            'Myopic': {"color": '#e41a1c', 'ls': "-", 'hatch': ''},
             'Policy Gradient':  {"color": '#ff7f00','ls': "-", 'hatch': ''},
             'RHO (proposed)': {"color": '#4daf4a', 'ls': "-", 'hatch': ''}
             }
