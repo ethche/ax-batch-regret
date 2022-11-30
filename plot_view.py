@@ -166,7 +166,8 @@ def plot_bar(pivot, metric, bar_x, color_dict = color_dict):
 row1_1, space, row1_2 = st.columns((3.5, 0.2, 1.5))
 
 with row1_1:
-    st.title("Adaptive Experimentation at Scale: Bayesian Batch Policies")
+    st.title("""
+    Adaptive Experimentation at Scale:                                 Bayesian Batch Policies""")
 
 # with row1_2:
 #     st.write(
@@ -185,14 +186,13 @@ with row1_sep_1:
     ## Introduction
 
     We run simulations to benchmark the performance of adaptive experimentation policies in batched settings. \\
-    More specifically, we consider a Bayesian experimenter who runs a multi-round adaptive experiment. \\
-    In each round, the experimenter assigns a batch of samples
+    More specifically, we consider a Bayesian experimenter who runs a multi-round adaptive experiment. In each round, the experimenter assigns a batch of samples
     across different treatment arms to observe the treatment effects. \\
     We fix the batch size to be $100$ samples.
     
     At the end of the experiment, the experimenter selects a single treatment arm.  
     The goal is to select the arm with the highest average treatment effect (Bayesian best arm identification).  
-    The evaluation metric we use is **Bayes Simple Regret**: the optimality gap between the selected arm and the best arm,
+    The evaluation metric we use is **Bayes Simple Regret**: the optimality gap between the selected arm and the best arm, \\
     averaged across instances drawn from the experimenter's prior.
 
     We propose Bayesian policies that use Gaussian approximations of the aggregated rewards in each batch
@@ -210,11 +210,11 @@ with row1_sep_1:
 prior_img_1, prior_img_2,space = st.columns((2.5, 2.5, 1))
 
 with prior_img_1:
-    st.image("./prior_fig_1.png")
+    st.image("./fig/prior_fig_1.png")
     st.text("")
 
 with prior_img_2:
-    st.image("./prior_fig_2.jpg")
+    st.image("./fig/prior_fig_2.jpg")
     st.text("")
 
 row1_sep_1, row1_sep_2 = st.columns((5,1))
