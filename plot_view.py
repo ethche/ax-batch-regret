@@ -156,7 +156,11 @@ def plot_bar(pivot, metric, bar_x, color_dict = color_dict):
     ax.tick_params(axis='both', which='major', labelsize=20)
     ax.set_ylabel(metric, fontsize=20)
     ax.set_xlabel(bar_x, fontsize=20)
-    ax.set_ylim((20,105))
+
+    if metric == "Percent of Simple Regret of Uniform":
+        ax.set_ylim((20,105))
+
+    
     #ax.set_xticks(pivot.index, fontsize = 18)
     st.pyplot(fig)
 
@@ -182,59 +186,105 @@ row1_sep_1, row1_sep_2 = st.columns((5,1))
 
 with row1_sep_1:
     st.write("""
-    ## Introduction
+    ## Overview
 
-    We run simulations to benchmark the performance of adaptive experimentation policies in batched settings. \\
-    More specifically, we consider a Bayesian experimenter who runs a multi-round adaptive experiment. \\
-    In each round, the experimenter assigns a batch of samples
-    across different treatment arms to observe the treatment effects. \\
-    We fix the batch size to be $100$ samples.
-    
-    At the end of the experiment, the experimenter selects a single treatment arm.  
-    The goal is to select the arm with the highest average treatment effect (Bayesian best arm identification).  
-    The evaluation metric we use is **Bayes Simple Regret**: the optimality gap between the selected arm and the best arm, \\
-    averaged across instances drawn from the experimenter's prior.
+    We study a batched adaptive experiment: at each epoch, we assign treatment arms, observe corresponding rewards, 
+    and use them to reallocate sampling effort in the next batch.
+    The goal is to select the arm with the highest reward at the end of the experiment (best arm identification). 
+    We benchmark the performance of a wide range of batch adaptive experimentation policies.
 
-    We propose Bayesian policies that use Gaussian approximations of the aggregated rewards in each batch
-    in order to update beliefs about average treatment effects. To test the performance of these methods,
-    we consider two settings:
-    1. **Gumbel/Gamma**: treatment effect for each arm $a$ is $Gumbel(\mu_{a}, \\beta)$ r.v.s. The experimenter has an independent Gamma(100, 1/100) prior over each $\mu_{a}$. 
-            The $\\beta$ parameter is known and determines the measurement variance $s_{a}^{2}$. We consider measurement variances in $(0.2, 1, 5)$.
-    2. **Bernoulli/Beta**: treatment effects for each arm $a$  are $Bernoulli(\\theta_{a})$ r.v.s. The experimenter has an independent Beta(100,100) prior over each $\\theta_{a}$. The measurement variance is fixed by $\\theta$, so this cannot be altered.
+    ## Methods
+    """)
 
-    Our approximate Bayesian policies also use Gaussian approximations for the prior distribution in order to preserve conjugacy.  
-    We consider different prior distributions. Below displays the mean and standard deviations under each prior distribution type (for $K = 6$ treatment arms).
-    """
-    )
+gauss, oracle, freq = st.tabs(["Gaussian Approximation", "Oracle Policies", "Frequentist Policies"])
 
-prior_img_1, prior_img_2,space = st.columns((2.5, 2.5, 1))
-
-with prior_img_1:
-    st.image("./fig/prior_fig_1.png")
-    st.text("")
-
-with prior_img_2:
-    st.image("./fig/prior_fig_2.jpg")
-    st.text("")
-
-row1_sep_1, row1_sep_2 = st.columns((5,1))
-
-with row1_sep_1:
+with gauss:
     st.write("""
-    We consider the following policies. $^{*}$ denotes policies that use Gaussian batch approximations.
-    - **Uniform:** uniformly samples all arms in every batch.  
-    - **Batch Successive Elimination:** in every time period, arm is eliminated if its upper confidence bound is below the lower confidence bound of another arm. If an arm $a$ is sampled $n_{a}$ times, then its confidence bound is as follows (with $c,\delta$ chosen by grid search for each instance): $C_{a} = c \cdot s_{a}\sqrt{\\frac{\log(Kn_{a}^{2}/\delta))}{n_{a}}}$.
-    - **Batch Oracle TS**: Beta/Bernoulli Thompson Sampling policy with batch updates. Only available for the Beta/Bernoulli setting.  
-    - **Batch Oracle Top-Two TS**: Beta/Bernoulli Top-Two Thompson Sampling policy with batch updates. Only available for the Beta/Bernoulli setting.  
-    - **Gaussian Limit TS$^{*}$**: Thompson Sampling policy with Gaussian batch approximations.  
-    - **Gaussian Limit Top-Two TS$^{*}$**: Top-Two Thompson Sampling policy with Gaussian batch approximations.  
-    - **Myopic$^{*}$:** selects the sampling allocation that maximizes the one-step lookahead Q-function. A randomized version of Knowledge Gradient.  
-    - **Policy Gradient$^{*}$**: allocates samples according to a policy parameterized by a feed-forward NN, which is trained through policy gradient with an episode length of 5 batches.    
-    - **RHO$^{*}$ (proposed)**: selects the sampling allocation by solving the RHO planning problem.  
+    Sampling policies based on Gaussian sequential experiment
+    - **Residual Horizon Optimization (proposed)**: selects the sampling allocation by solving the RHO planning problem.  
+    - **Policy Gradient**: allocates samples according to a policy parameterized by a feed-forward NN, which is trained through policy gradient with an episode length of 5 batches.    
+    - **Myopic:** selects the sampling allocation that maximizes the one-step lookahead Q-function. A randomized version of Knowledge Gradient.  
+    - **Gaussian Limit TS**: Thompson Sampling policy with Gaussian batch approximations.  
+    - **Gaussian Limit Top-Two TS**: Top-Two Thompson Sampling policy with Gaussian batch approximations.  
+    """)
     
-    """
-    )
+with oracle:
+    st.write("""
+    Oracle policies that assume true knowledge of the distribution of individual rewards. Only available when raw rewards follow a Beta-Bernoulli model.
+    - **Oracle TS**: Beta-Bernoulli Thompson Sampling policy with batch updates.
+    - **Oracle Top-Two TS**: Beta-Bernoulli Top-Two Thompson Sampling policy with batch updates.
+    """)
+
+with freq:
+    st.write("""
+    Standard frequentist policies
+    - **Uniform:** uniformly samples all arms in every batch.  
+    - **Batch Successive Elimination:** in every time period, arm is eliminated if its upper confidence bound is below the lower confidence bound of another arm. 
+        - If an arm $a$ is sampled $n_{a}$ times, then its confidence bound is: $C_{a} = c \cdot s_{a}\sqrt{\\frac{\log(Kn_{a}^{2}/\delta))}{n_{a}}}$,
+        - $s_{a}$ is measurement standard deviation, $K$ is the number of arms, $c$ and $\delta$ are chosen optimally for each instance via grid search.
+    """)
+
+setting, space = st.columns((5,1))
+
+with setting:
+    st.write("""
+    ## Setting
+
+    We evaluate methods using the Bayes simple regret, the optimality gap between the selected arm and the best arm, 
+    averaged across instances drawn from the experimenter's prior. We propose Bayesian policies that use 
+    Gaussian approximations of the aggregated rewards in each batch in order to update beliefs about the average rewards. 
+    """)
+
+gumbel, bernoulli  = st.tabs(["Gumbel", "Bernoulli"])
+
+with bernoulli:
+    st.write("""
+    **Bernoulli/Beta**: 
+    - Treatment rewards for each arm $a$ are distributed as $Bernoulli(\\theta_{a})$ r.v.s. 
+    - The experimenter has an independent Beta(100,100) prior over each $\\theta_{a}$. 
+    - The measurement variance is fixed by $\\theta$, so this cannot be altered.
+    """)
+
+with gumbel:
+    st.write("""
+    **Gumbel/Gamma**: 
+    - Treatment rewards for each arm $a$ are distributed as $Gumbel(\mu_{a}, \\beta)$ r.v.s. 
+    - The experimenter has an independent Gamma(100, 1/100) prior over each $\mu_{a}$. 
+    - The $\\beta$ parameter is known and determines the measurement variance $s_{a}^{2}$. We consider measurement variances in $(0.2, 1, 5)$.
+    """)
+
+priors, space = st.columns((5,1))
+
+with priors:
+    st.write("""
+    ## Priors
+
+    We consider different prior distributions on the average rewards. 
+    Unlike Bayesian bandit methods such as Thompson sampling, we do not require a model of the overall reward distribution.
+
+
+    """)
+
+flat, top_one, top_half, descending = st.tabs(['Flat', 'Top One', 'Top Half', 'Descending'])
+
+with flat:
+    st.write("Below displays the mean $\pm$ one standard deviation under each prior distribution type (for $K = 6$ treatment arms).")
+    st.image("./fig/flat.jpg")
     st.text("")
+
+with top_one:
+    st.write("Below displays the mean $\pm$ one standard deviation under each prior distribution type (for $K = 6$ treatment arms).")
+    st.image("./fig/top_one.jpg")
+    st.text("")
+
+with top_half:
+    st.write("Below displays the mean $\pm$ one standard deviation under each prior distribution type (for $K = 6$ treatment arms).")
+    st.image("./fig/top_half.jpg")
+    st.text("")
+
+with descending:
+    st.write("Below displays the mean $\pm$ one standard deviation under each prior distribution type (for $K = 6$ treatment arms).")
+    st.image("./fig/descending.jpg")
     st.text("")
 
 row1_header_1, space, row1_header_2 = st.columns((3, 0.2, 1.5))
@@ -278,10 +328,11 @@ line_plt, space, line_plt_toggle = st.columns((3, 0.2, 1.5))
 with line_plt_toggle:
     st.text("")
     st.text("")
-    dist_selected = st.selectbox("Reward Distribution", options = ('Gumbel', 'Bernoulli'), key = 'dist_select')
+    dist_selected = st.radio("Reward Distribution", options = ('Gumbel', 'Bernoulli'), key = 'dist_select')
+
+    K_selected = st.radio("Number of Treatment Arms", options = (10, 100), key = 'K_select')
     metric_selected = st.selectbox("Metric", options = ('Percent of Simple Regret of Uniform', 'Simple Regret', 'Percent Correct'), 
                                     key = 'metric_select')
-    K_selected = st.selectbox("Number of Treatment Arms", options = (10, 100), key = 'K_select')
     s2_selected = st.selectbox("Measurement variance", options = (1, 0.2, 5), key = 's2_select')
 
     policies_selected = st.multiselect("Policies", options = [key for key in  color_dict.keys()], key = 'policies_select', 
@@ -292,7 +343,7 @@ with line_plt_toggle:
                                                    'Myopic',
                                                    'Policy Gradient',
                                                    'RHO (proposed)'])
-    prior_type_selected = st.selectbox("Prior Distribution", options = ('Flat', 'Top One', 'Top Half', 'Descending'), 
+    prior_type_selected = st.radio("Prior Distribution", options = ('Flat', 'Top One', 'Top Half', 'Descending'), 
                                         key = 'prior_select')
     T_selected = st.select_slider("Max Horizon", options = [i for i in range(1,11)], value = (1,10), key = 'T_select')
 
@@ -323,9 +374,13 @@ row3_1, space, row3_2 = st.columns((3, 0.2, 1.5))
 
 with row3_2:
     st.text("")
+    bar_reward_selected = st.radio("Reward Distribution", options = ['Gumbel'], 
+                                    key = 'bar_reward_select')
+
+    bar_K_selected = st.radio("Number of Treatment Arms", options = (10, 100), key = 'bar_K_select')
+
     bar_metric_selected = st.selectbox("Metric", options = ('Percent of Simple Regret of Uniform', 'Simple Regret', 'Percent Correct'), 
                                     key = 'bar_metric_select')
-    bar_K_selected = st.selectbox("Number of Treatment Arms", options = (10, 100), key = 'bar_K_select')
     bar_policies_selected = st.multiselect("Policies", options = [key for key in  color_dict.keys()], key = 'bar_policies_select', 
                                         default = ['Uniform', 
                                                    'Batch Successive Elimination', 
@@ -334,7 +389,7 @@ with row3_2:
                                                    'Myopic',
                                                    'Policy Gradient',
                                                    'RHO (proposed)'])
-    bar_prior_type_selected = st.selectbox("Prior Distribution", options = ('Flat', 'Top One', 'Top Half', 'Descending'), 
+    bar_prior_type_selected = st.radio("Prior Distribution", options = ('Flat', 'Top One', 'Top Half', 'Descending'), 
                                         key = 'bar_prior_select')
     bar_T_selected = st.select_slider("T", options = [i for i in range(1,11)], value = (1,10), key = 'bar_T_select')
     st.text("")
@@ -363,10 +418,10 @@ row4_1, space, row4_2 = st.columns((3, 0.2, 1.5))
 
 with row4_2:
     st.text("")
-    prior_dist_selected = st.selectbox("Reward Distribution", options = ('Gumbel', 'Bernoulli'), key = 'prior_dist_select')
+    prior_dist_selected = st.radio("Reward Distribution", options = ('Gumbel', 'Bernoulli'), key = 'prior_dist_select')
+    prior_K_selected = st.radio("Number of Treatment Arms", options = (10, 100), key = 'prior_K_select')
     prior_metric_selected = st.selectbox("Metric", options = ('Percent of Simple Regret of Uniform', 'Simple Regret', 'Percent Correct'), 
-                                    key = 'prior_metric_select')                           
-    prior_K_selected = st.selectbox("Number of Treatment Arms", options = (10, 100), key = 'prior_K_select')
+                                    key = 'prior_metric_select')     
     prior_s2_selected = st.selectbox("Measurement variance", options = (1, 0.2, 5), key = 'prior_s2_select')
     prior_policies_selected = st.multiselect("Policies", options = [key for key in  color_dict.keys()], key = 'prior_policies_select', 
                                         default = ['Uniform', 
