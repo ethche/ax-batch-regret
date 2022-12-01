@@ -4,7 +4,7 @@ import json
 import streamlit as st
 import matplotlib.pyplot as plt
 
-st.set_page_config(layout="wide")
+st.set_page_config(layout="wide", page_title="Adaptive Experimentation at Scale", page_icon=":mechanical_arm:")
 
 plt.style.use('seaborn-white')
 
@@ -200,12 +200,12 @@ gauss, oracle, freq = st.tabs(["Gaussian Approximation", "Oracle Policies", "Fre
 
 with gauss:
     st.write("""
-    Sampling policies based on Gaussian sequential experiment
+    Sampling policies based on Gaussian sequential experiment, the Gaussian approximation of aggregated rewards.
     - **Residual Horizon Optimization (proposed)**: selects the sampling allocation by solving the RHO planning problem.  
     - **Policy Gradient**: allocates samples according to a policy parameterized by a feed-forward NN, which is trained through policy gradient with an episode length of 5 batches.    
     - **Myopic:** selects the sampling allocation that maximizes the one-step lookahead Q-function. A randomized version of Knowledge Gradient.  
-    - **Gaussian Limit TS**: Thompson Sampling policy with Gaussian batch approximations.  
-    - **Gaussian Limit Top-Two TS**: Top-Two Thompson Sampling policy with Gaussian batch approximations.  
+    - **Gaussian Limit TS**: Thompson Sampling policy for the Gaussian sequential experiment.  
+    - **Gaussian Limit Top-Two TS**: Top-Two Thompson Sampling policy for the Gaussian sequential experiment.  
     """)
     
 with oracle:
@@ -217,7 +217,7 @@ with oracle:
 
 with freq:
     st.write("""
-    Standard frequentist policies
+    Standard frequentist policies.
     - **Uniform:** uniformly samples all arms in every batch.  
     - **Batch Successive Elimination:** in every time period, arm is eliminated if its upper confidence bound is below the lower confidence bound of another arm. 
         - If an arm $a$ is sampled $n_{a}$ times, then its confidence bound is: $C_{a} = c \cdot s_{a}\sqrt{\\frac{\log(Kn_{a}^{2}/\delta))}{n_{a}}}$,
@@ -291,7 +291,8 @@ row1_header_1, space, row1_header_2 = st.columns((3, 0.2, 1.5))
 
 with row1_header_1:
     st.write("""
-    ## Simple Regret across Reallocation Epochs
+    ## Results
+    ### Simple Regret across Reallocation Epochs
     """
     )
 
@@ -366,7 +367,7 @@ row2_sep_1, space, row2_sep_2 = st.columns((3, 0.2, 1.5))
 
 with row2_sep_1:
     st.write("""
-    ## Simple Regret across Measurement Variances
+    ### Simple Regret across Measurement Variances
     """
     )
 
@@ -410,7 +411,7 @@ row3_sep_1, space, row3_sep_2 = st.columns((3, 0.2, 1.5))
 
 with row3_sep_1:
     st.write("""
-    ## Simple Regret across Priors
+    ### Simple Regret across Priors
     """
     )
 
